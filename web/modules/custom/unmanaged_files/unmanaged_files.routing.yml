@@ -1,0 +1,8 @@
+unmanaged_files.test:
+  path: '/unmanaged-files/test'
+  defaults:
+    _controller: '\Drupal\unmanaged_files\Controller\TestController::view'
+    _title: 'Unmanaged files test'
+  requirements:
+    _permission: 'access content'
+

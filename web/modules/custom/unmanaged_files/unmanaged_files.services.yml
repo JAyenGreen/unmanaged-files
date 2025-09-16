@@ -1,0 +1,6 @@
+services:
+  unmanaged_files.handler:
+    class: Drupal\unmanaged_files\Service\FileHandler
+    arguments:
+      - '@file_system'
+      - '@stream_wrapper_manager'
