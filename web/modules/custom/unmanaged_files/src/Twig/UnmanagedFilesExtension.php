@@ -12,14 +12,6 @@ use Twig\TwigFunction;
  */
 final class UnmanagedFilesExtension extends AbstractExtension {
 
-  /**
-   * Constructs the extension.
-   *
-   * @param \Drupal\unmanaged_files\Service\FileHandler $handler
-   *   The unmanaged file handler service.
-   * @param \Drupal\Core\File\FileUrlGeneratorInterface $urlGen
-   *   The file URL generator service.
-   */
   public function __construct(
     private FileHandler $handler,
     private FileUrlGeneratorInterface $urlGen,
@@ -30,20 +22,31 @@ final class UnmanagedFilesExtension extends AbstractExtension {
    */
   public function getFunctions(): array {
     return [
-      // Returns an absolute URL to a random unmanaged file (or NULL).
-      new TwigFunction('random_unmanaged_file', [$this, 'getRandomFileUrl']),
+      new TwigFunction('random_unmanaged_file', [$this, 'getRandomFile'], ['is_safe' => ['html']]),
     ];
   }
 
   /**
-   * Returns an absolute URL for a random unmanaged file.
+   * Returns either a file URL or an <img> tag for a random unmanaged file.
+   *
+   * @param string $format
+   *   'url' (default) to return the file URL, or 'img' to return an <img> tag.
    *
    * @return string|null
-   *   A URL string or NULL if none found.
+   *   URL or HTML string, or NULL if no files found.
    */
-  public function getRandomFileUrl(): ?string {
+  public function getRandomFile(string $format = 'url'): ?string {
     $uri = $this->handler->getRandomFile();
-    return $uri ? $this->urlGen->generateAbsoluteString($uri) : NULL;
+    if (!$uri) {
+      return NULL;
+    }
+
+    $url = $this->urlGen->generateAbsoluteString($uri);
+
+    return match ($format) {
+      'img' => '<img src="' . $url . '" alt="Random unmanaged file">',
+      default => $url,
+    };
   }
 
 }
