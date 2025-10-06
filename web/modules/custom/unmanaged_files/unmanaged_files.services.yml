@@ -1,6 +1,10 @@
 services:
   unmanaged_files.handler:
     class: Drupal\unmanaged_files\Service\FileHandler
-    arguments:
-      - '@file_system'
-      - '@stream_wrapper_manager'
+    arguments: ['@file_system','@stream_wrapper_manager']
+
+  unmanaged_files.twig_extension:
+    class: Drupal\unmanaged_files\Twig\UnmanagedFilesExtension
+    arguments: ['@unmanaged_files.handler','@file_url_generator']
+    tags:
+      - { name: twig.extension }

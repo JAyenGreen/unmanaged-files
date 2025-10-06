@@ -1,0 +1,17 @@
+{#
+/**
+ * @file
+ * Renders a random unmanaged file picked by the service.
+ */
+#}
+
+<div class="unmanaged-files-test">
+  <h2>Unmanaged files test</h2>
+
+  {% if image_url %}
+    <p>Picked: <code>{{ uri }}</code></p>
+    <img src="{{ image_url }}" alt="Random unmanaged file" />
+  {% else %}
+    <p><em>{{ message }}</em></p>
+  {% endif %}
+</div>

@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Module hooks for unmanaged_files.
+ */
+
+/**
+ * Implements hook_theme().
+ *
+ * Registers a module-provided template so we don't need a custom theme.
+ * The template file lives in: modules/custom/unmanaged_files/templates/
+ */
+function unmanaged_files_theme() {
+  return [
+    'unmanaged_files_test' => [
+      // Keep it simple: no variables required, but you can add some later.
+      'variables' => [
+        'image_url' => NULL,
+        'uri' => NULL,
+        'message' => NULL,
+      ],
+      // Base name of templates/unmanaged-files-test.html.twig (no extension).
+      'template' => 'unmanaged-files-test',
+    ],
+  ];
+}
