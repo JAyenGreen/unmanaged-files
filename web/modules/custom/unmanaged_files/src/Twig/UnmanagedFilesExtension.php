@@ -1,35 +1,83 @@
+<?php
+
+namespace Drupal\unmanaged_files\Twig;
+
+use Drupal\unmanaged_files\Service\FileHandler;
+use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\image\Entity\ImageStyle;
-// Add at top of file if not present.
+use Drupal\Component\Utility\Html;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
 
 /**
- * Returns either a file URL or an <img> tag for a random unmanaged file.
- *
- * @param string $format
- *   'url' (default) to return the file URL, or 'img' to return an <img> tag.
- * @param string|null $style
- *   (optional) The image style name to apply when $format is 'img'.
- *
- * @return string|null
- *   URL or HTML string, or NULL if no files found.
+ * Twig extension exposing unmanaged file helpers to templates.
  */
-public function getRandomFile(string $format = 'url', ?string $style = NULL): ?string {
-  $uri = $this->handler->getRandomFile();
-  if (!$uri) {
-    return NULL;
+final class UnmanagedFilesExtension extends AbstractExtension {
+
+  /**
+   * @param \Drupal\unmanaged_files\Service\FileHandler $handler
+   *   Unmanaged file handler service.
+   * @param \Drupal\Core\File\FileUrlGeneratorInterface $urlGen
+   *   File URL generator.
+   */
+  public function __construct(
+    private FileHandler $handler,
+    private FileUrlGeneratorInterface $urlGen,
+  ) {}
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFunctions(): array {
+    // Marked is_safe: we return HTML when format = 'img'.
+    return [
+      new TwigFunction('random_unmanaged_file', [$this, 'randomUnmanagedFile'], [
+        'is_safe' => ['html'],
+      ]),
+    ];
   }
 
-  // Get the base file URL.
-  $url = $this->urlGen->generateAbsoluteString($uri);
-
-  // Apply image style if requested.
-  if ($format === 'img' && $style) {
-    if ($image_style = ImageStyle::load($style)) {
-      $url = $image_style->buildUrl($uri);
+  /**
+   * Returns a URL or an <img> tag for a random unmanaged file.
+   *
+   * Example usage in Twig:
+   *   {{ random_unmanaged_file() }}                {# URL #}
+   *   {{ random_unmanaged_file('img') }}          {# <img> with original URL #}
+   *   {{ random_unmanaged_file('img', 'thumbnail') }}  {# <img> with image style #}
+   *
+   * @param string $format
+   *   'url' (default) to return a URL string; 'img' to return an <img> tag.
+   * @param string|null $style
+   *   Optional image style machine name (used only when $format = 'img').
+   *
+   * @return string|null
+   *   URL or HTML string, or NULL if no files found.
+   */
+  public function randomUnmanagedFile(string $format = 'url', ?string $style = NULL): ?string {
+    $uri = $this->handler->getRandomFile();
+    if (!$uri) {
+      return NULL;
     }
+
+    // Start with the absolute file URL.
+    $url = $this->urlGen->generateAbsoluteString($uri);
+
+    // If an image style is requested, try to build a styled URL.
+    if ($format === 'img' && $style) {
+      if ($image_style = ImageStyle::load($style)) {
+        // buildUrl() returns a publicly accessible derivative URL.
+        $url = $image_style->buildUrl($uri);
+      }
+    }
+
+    if ($format === 'img') {
+      // We declared is_safe, so escape attributes manually.
+      $safeUrl = Html::escape($url);
+      return '<img src="' . $safeUrl . '" alt="Random unmanaged file">';
+    }
+
+    // Default: return the URL string.
+    return $url;
   }
 
-  return match ($format) {
-    'img' => '<img src="' . $url . '" alt="Random unmanaged file">',
-    default => $url,
-  };
 }
